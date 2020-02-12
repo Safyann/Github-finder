@@ -8,20 +8,10 @@
         </div>
 
         <!-- search -->
-        <search
-          :value="search"
-          placeholder="Type username..."
-          @search="search = $event"
-        />
+        <search :value="search" placeholder="Type username..." @search="search = $event" />
 
         <!-- buttons -->
-        <button v-if="!repos" class="btn btnPrimary" @click="getUser">
-          Search!
-        </button>
-
-        <button v-else class="btn btnPrimary" @click="getUser">
-          Search again!
-        </button>
+        <button class="btn btnPrimary" @click="getUser">Search!</button>
 
         <div class="user__wrapper" v-if="user">
           <div class="user-avatar">
@@ -45,20 +35,25 @@
           <!-- item -->
           <div class="repo-item" v-for="repo in reposSort" :key="repo.id">
             <div class="repos-info">
-              <a class="link" target="_blank" :href="repo.html_url">
-                {{ repo.name }}</a
-              >
-              <span> {{ repo.stargazers_count }}⭐</span>
+              <a class="link" target="_blank" :href="repo.html_url">{{ repo.name }}</a>
+              <span>{{ repo.stargazers_count }}⭐</span>
             </div>
           </div>
 
           <div class="button-list">
-            <div class="btn btnPrimary" @click="prevPage">&#8592;</div>
+            <!-- <div class="btn btnPrimary" @click="prevPage">&#8592;</div>
             <p>
               page {{ this.page.current }} from
               {{ Math.ceil(this.repos.length / this.page.length) }}
             </p>
-            <div class="btn btnPrimary" @click="nextPage">&#8594;</div>
+            <div class="btn btnPrimary" @click="nextPage">&#8594;</div>-->
+
+            <button
+              class="btn btnPrimary"
+              @click="loadMore"
+              :disabled="maxLength === 0"
+              :class="{ btnDisabled: maxLength === 0 }"
+            >Load more</button>
           </div>
         </div>
       </div>
@@ -67,7 +62,6 @@
 </template>
 
 <script>
-import axios from "axios";
 import search from "../components/Search";
 
 export default {
@@ -77,11 +71,6 @@ export default {
   data() {
     return {
       search: "",
-      error: null,
-      repos: null,
-      user: null,
-      currentSort: "name",
-      currentSortDir: "asc",
       page: {
         current: 1,
         length: 3
@@ -103,38 +92,33 @@ export default {
           let end = this.page.current * this.page.length;
           if (index >= start && index < end) return true;
         });
+    },
+    maxLength() {
+      return this.repos.length;
+    },
+    repos() {
+      return this.$store.getters.getRepos;
+    },
+    user() {
+      return this.$store.getters.getUser;
+    },
+    error() {
+      return this.$store.getters.getError;
+    },
+    currentSort() {
+      return this.$store.getters.getCurrentSort;
+    },
+    currentSortDir() {
+      return this.$store.getters.getCurrentSortDir;
     }
   },
   methods: {
-    getRepos() {
-      axios
-        .get(`https://api.github.com/users/${this.search}/repos`)
-        .then(res => {
-          this.repos = res.data;
-        });
-    },
-
     getUser() {
-      axios
-        .get(`https://api.github.com/users/${this.search}`)
-        .then(res => {
-          this.error = null;
-          this.user = res.data;
-          this.getRepos();
-        })
-        .catch(err => {
-          console.log(err);
-          this.user = null;
-          this.repos = null;
-          this.error = "Can`t find this user";
-        });
+      this.$store.dispatch("setUser", this.search);
     },
 
     sort(e) {
-      if (e === this.currentSort) {
-        this.currentSortDir = this.currentSortDir === "asc" ? "desc" : "asc";
-      }
-      this.currentSort = e;
+      this.$store.dispatch("changeCurrentSort", e);
     },
 
     prevPage() {
@@ -144,6 +128,12 @@ export default {
     nextPage() {
       if (this.page.current * this.page.length < this.repos.length)
         this.page.current += 1;
+    },
+
+    loadMore() {
+      this.$store.dispatch("loadRepos").catch(err => {
+        console.log(err);
+      });
     }
   }
 };
