@@ -14,9 +14,6 @@ export default {
       axios.get(`https://api.github.com/users/${search}/repos`).then(res => {
         commit("setRepos", res.data);
       });
-    },
-    loadRepos({ commit }) {
-      commit("loadRepos");
     }
   },
   getters: {

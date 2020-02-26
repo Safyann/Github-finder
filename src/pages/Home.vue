@@ -51,8 +51,8 @@
             <button
               class="btn btnPrimary"
               @click="loadMore"
-              :disabled="maxLength === 0"
-              :class="{ btnDisabled: maxLength === 0 }"
+              :disabled="page.length >= repos.length"
+              :class="{ btnDisabled: page.length >= repos.length }"
             >Load more</button>
           </div>
         </div>
@@ -93,9 +93,6 @@ export default {
           if (index >= start && index < end) return true;
         });
     },
-    maxLength() {
-      return this.repos.length;
-    },
     repos() {
       return this.$store.getters.getRepos;
     },
@@ -114,6 +111,7 @@ export default {
   },
   methods: {
     getUser() {
+      this.page.length = 3;
       this.$store.dispatch("setUser", this.search);
     },
 
@@ -131,9 +129,7 @@ export default {
     },
 
     loadMore() {
-      this.$store.dispatch("loadRepos").catch(err => {
-        console.log(err);
-      });
+      this.page.length += 3;
     }
   }
 };
@@ -185,6 +181,14 @@ img {
   .btn {
     border-radius: 60px;
     margin: 0 20px;
+  }
+}
+
+button {
+  margin-top: 20px;
+  &.btnDisabled {
+    cursor: default;
+    opacity: 0.6;
   }
 }
 </style>
